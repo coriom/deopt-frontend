@@ -18,7 +18,7 @@ function canUseGitHub() {
 
 /* ─────────────────────── FICHIERS LOCAUX ────────────────────── */
 
-const DATA_DIR       = path.join(process.cwd(), "data"); // ➜ frontend/data/
+const DATA_DIR = process.env.VERCEL ? "/tmp" : path.join(process.cwd(), "data");
 const TSV_LOCAL_PATH = path.join(DATA_DIR, "DeOptV1-contractsOptions-local.tsv");
 const BACKLOG_JSONL  = path.join(DATA_DIR, "pending_options.jsonl");
 
