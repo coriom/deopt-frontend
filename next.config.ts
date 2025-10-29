@@ -12,7 +12,6 @@ const nextConfig: NextConfig = {
       'pino-pretty': false,
       'utf-8-validate': false,
       'bufferutil': false,
-      '@wagmi/connectors': 'wagmi/connectors',
     }
     return config
   },
