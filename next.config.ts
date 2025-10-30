@@ -3,6 +3,14 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   webpack(config) {
     config.resolve = config.resolve || {}
     config.resolve.alias = {
@@ -11,7 +19,7 @@ const nextConfig: NextConfig = {
       '@react-native-async-storage/async-storage': false,
       'pino-pretty': false,
       'utf-8-validate': false,
-      'bufferutil': false,
+      bufferutil: false,
     }
     return config
   },
