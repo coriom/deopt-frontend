@@ -10,10 +10,10 @@ type Row = {
   contractAddress: `0x${string}`;
   underlyingToken?: `0x${string}`;
   paymentToken?: `0x${string}`;
-  optionType?: 'CALL' | 'PUT';
-  positionSize: string;
-  entryPrice: string;
-  currentPrice: string | null;
+  optionType?: 'CALL' | 'PUT';   // pour options
+  positionSize: string;          // amount / size
+  entryPrice: string;            // entry/strike
+  currentPrice: string | null;   // spot
   pnl: string | null;
   expiration: number | null;
   status: string;
@@ -45,7 +45,7 @@ export default function DashboardOnePage() {
   const [err, setErr] = useState<string | null>(null);
 
   // ----- Manager state (tout-en-un) -----
-  const [selectedAddr, setSelectedAddr] = useState<string>('');         // adresse à gérer
+  const [selectedAddr, setSelectedAddr] = useState<string>(''); // adresse à gérer
   const [selectedType, setSelectedType] = useState<'option'|'future'>('option');
 
   const addrParam = useMemo(() => address ? `?address=${address}` : '', [address]);
@@ -65,9 +65,9 @@ export default function DashboardOnePage() {
         contractAddress: r.contractAddress,
         underlyingToken: r.underlyingToken,
         paymentToken: r.paymentToken,
-        positionSize: String(r.positionSize ?? ''),
-        entryPrice: String(r.entryPrice ?? ''),
-        currentPrice: r.currentPrice ?? null,
+        positionSize: String(r.positionSize ?? ''), // amount
+        entryPrice: String(r.entryPrice ?? ''),     // entry
+        currentPrice: r.currentPrice ?? null,       // spot
         pnl: r.pnl ?? null,
         expiration: r.expiration ?? null,
         status: r.status ?? 'active',
@@ -79,10 +79,10 @@ export default function DashboardOnePage() {
         contractAddress: r.contractAddress,
         underlyingToken: r.underlyingToken,
         paymentToken: r.paymentToken,
-        optionType: r.optionType,
-        positionSize: String(r.positionSize ?? ''),
-        entryPrice: String(r.entryPrice ?? ''),
-        currentPrice: r.currentPrice ?? null,
+        optionType: r.optionType,                   // CALL / PUT
+        positionSize: String(r.positionSize ?? ''), // underlyingAmount
+        entryPrice: String(r.entryPrice ?? ''),     // strike
+        currentPrice: r.currentPrice ?? null,       // spot
         pnl: r.pnl ?? null,
         expiration: r.expiration ?? null,
         status: r.status ?? 'active',
@@ -126,7 +126,7 @@ export default function DashboardOnePage() {
                 Address: {address} {loading ? '• refreshing…' : ''} {err ? '• ' + err : ''}
               </div>
 
-              {/* ---- Panneau Manager (toujours visible connecté) ---- */}
+              {/* ---- Panneau Manager (Options + Futures) ---- */}
               <div className="bg-neutral-800/40 border border-neutral-800 rounded-xl p-4 space-y-3">
                 <div className="flex flex-col md:flex-row md:items-end gap-3">
                   <div className="flex-1">
@@ -151,7 +151,7 @@ export default function DashboardOnePage() {
                   </div>
                 </div>
 
-                {/* Quand une adresse valide est fournie, on montre les actions */}
+                {/* Actions & panneaux visibles quand l’adresse est valide */}
                 {isHexAddr(selectedAddr) ? (
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Overview */}
@@ -162,13 +162,14 @@ export default function DashboardOnePage() {
                         <div><span className="opacity-60">Contract:</span> <span className="font-mono">{selectedAddr}</span></div>
                       </div>
                       <div className="text-xs text-neutral-400">
-                        Les données on-chain seront lues ici (params, margin, state…).
+                        On-chain data (params, margin/health, state) will display here once we wire reads.
                       </div>
                     </div>
 
                     {/* Quick actions */}
                     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-3">
                       <div className="text-lg font-semibold">Quick actions</div>
+
                       {selectedType === 'option' ? (
                         <div className="grid grid-cols-2 gap-2">
                           <button className="rounded-lg px-3 py-2 bg-emerald-500 text-black font-semibold">
@@ -197,23 +198,82 @@ export default function DashboardOnePage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="text-neutral-400 text-sm">
-                          Futures actions (increase/reduce/close) à ajouter.
+                        // FUTURES actions
+                        <div className="grid grid-cols-2 gap-2">
+                          <button className="rounded-lg px-3 py-2 bg-emerald-500 text-black font-semibold">
+                            Settle at expiry
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Liquidate if unsafe
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Force liq after grace
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Add buyer collateral
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Add seller collateral
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Withdraw buyer collateral
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Withdraw seller collateral
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Set oracle / price decimals
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Aave: enable / config
+                          </button>
+                          <button className="rounded-lg px-3 py-2 bg-neutral-800 border border-neutral-700">
+                            Aave: migrate / pull
+                          </button>
                         </div>
                       )}
+
                       <div className="text-xs text-neutral-400">
-                        Les boutons appelleront `writeContract` (wagmi) avec l’ABI.
+                        À brancher via `writeContract` (wagmi) avec l’ABI correspondante.
                       </div>
                     </div>
 
                     {/* Panels data */}
                     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-3">
                       <div className="text-lg font-semibold">Parameters</div>
-                      <div className="text-sm text-neutral-300">Strike, amount, premium, expiration…</div>
+                      {selectedType === 'option' ? (
+                        <ul className="text-sm text-neutral-300 list-disc pl-5 space-y-1">
+                          <li>Strike, amount (underlying), premium</li>
+                          <li>Exercise style (American / European window)</li>
+                          <li>Expiration &amp; contract expiration</li>
+                          <li>Payment token / Oracle</li>
+                        </ul>
+                      ) : (
+                        <ul className="text-sm text-neutral-300 list-disc pl-5 space-y-1">
+                          <li>Amount (position size) &amp; entry price</li>
+                          <li>Expiration, contract expiration &amp; grace period</li>
+                          <li>Initial / maintenance margin (bps)</li>
+                          <li>Payment token / Oracle (priceDecimals)</li>
+                        </ul>
+                      )}
                     </div>
+
                     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-3">
                       <div className="text-lg font-semibold">Margin & Health</div>
-                      <div className="text-sm text-neutral-300">Collateral, min margin, health %, deficit/excess…</div>
+                      {selectedType === 'option' ? (
+                        <ul className="text-sm text-neutral-300 list-disc pl-5 space-y-1">
+                          <li>Collateral deposited vs. minimum margin</li>
+                          <li>Health % (bps), excess/deficit</li>
+                          <li>Aave balances (cash / aToken)</li>
+                        </ul>
+                      ) : (
+                        <ul className="text-sm text-neutral-300 list-disc pl-5 space-y-1">
+                          <li>Buyer &amp; Seller collateral</li>
+                          <li>Spot &amp; PnL, equities (buyer/seller)</li>
+                          <li>Maintenance requirement &amp; unsafe flag</li>
+                          <li>Aave balances (cash / aToken)</li>
+                        </ul>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -223,7 +283,7 @@ export default function DashboardOnePage() {
                 )}
               </div>
 
-              {/* ---- Tableau des contrats ---- */}
+              {/* ---- Tableau des contrats (Options + Futures) ---- */}
               <div className="overflow-x-auto rounded-xl border border-neutral-800">
                 <table className="min-w-full text-sm">
                   <thead className="bg-neutral-800/60">
@@ -232,8 +292,8 @@ export default function DashboardOnePage() {
                       <th className="px-4 py-3 font-semibold">Contract</th>
                       <th className="px-4 py-3 font-semibold">Underlying</th>
                       <th className="px-4 py-3 font-semibold">Size</th>
-                      <th className="px-4 py-3 font-semibold">Entry</th>
-                      <th className="px-4 py-3 font-semibold">Current</th>
+                      <th className="px-4 py-3 font-semibold">Entry/Strike</th>
+                      <th className="px-4 py-3 font-semibold">Spot</th>
                       <th className="px-4 py-3 font-semibold">P&amp;L</th>
                       <th className="px-4 py-3 font-semibold">Expiration</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
@@ -250,7 +310,9 @@ export default function DashboardOnePage() {
                     )}
                     {rows.map((r, i) => (
                       <tr key={r.contractAddress + i} className="border-t border-neutral-800 hover:bg-neutral-800/30 transition">
-                        <td className="px-4 py-3">{r.type === 'future' ? 'Future' : `Option ${r.optionType ?? ''}`}</td>
+                        <td className="px-4 py-3">
+                          {r.type === 'future' ? 'Future' : `Option ${r.optionType ?? ''}`}
+                        </td>
                         <td className="px-4 py-3 font-mono">{short(r.contractAddress)}</td>
                         <td className="px-4 py-3 font-mono">{short(r.underlyingToken)}</td>
                         <td className="px-4 py-3">{fmtNum(r.positionSize)}</td>
